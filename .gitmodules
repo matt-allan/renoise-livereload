@@ -1,0 +1,6 @@
+[submodule "definitions/renoise"]
+	path = definitions/renoise
+	url = https://github.com/renoise/definitions.git
+[submodule "crater"]
+	path = crater
+	url = https://github.com/destructure-dev/crater

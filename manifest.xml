@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RenoiseScriptingTool doc_version="0">
+  <ApiVersion>6.1</ApiVersion>
+  <Id>com.matta.livereload</Id>
+  <Version>0.1</Version>
+  <Author>Matt Allan [oss@mattallan.me]</Author>
+  <Name>Devtools</Name>
+  <Category>Development</Category>
+  <Description>Live reload for xrnx tools</Description>
+  <Homepage>http://tools.renoise.com/tools/livereload</Homepage>
+</RenoiseScriptingTool>
