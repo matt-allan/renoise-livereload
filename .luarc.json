@@ -1,7 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
   "workspace.library": ["definitions"],
-  "runtime.plugin": ["definitions/plugin.lua"],
+  "runtime.plugin": ["definitions/renoise/plugin.lua"],
   "runtime.version": "Lua 5.1",
-  "hint.enable": true
+  "hint.enable": true,
+    "diagnostics.disable": [
+        "unused-function"
+    ]
 }
