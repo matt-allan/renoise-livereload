@@ -33,8 +33,7 @@ renoise.Document.create("RenoiseScriptingTool"){
 ---@field xrnx_id renoise.Document.ObservableString
 ---@field build_command renoise.Document.ObservableString
 ---@field build_log renoise.Document.ObservableStringList
----@field file_extensions renoise.Document.ObservableStringList
----@field statdb renoise.Document.ObservableString
+---@field last_mtime renoise.Document.ObservableNumber
 renoise.Document.create("LiveReloadProject") {
   -- Absolute path to the project's folder on disk
   folder = "",
@@ -44,13 +43,9 @@ renoise.Document.create("LiveReloadProject") {
   build_command = "",
   -- A circular buffer of the last ~50 build log lines
   build_log = renoise.Document.ObservableStringList(),
-  -- File extensions to include in the file modification checks
-  file_extensions = renoise.Document.ObservableStringList(),
-  -- A serialized list of file stat info for tracking file modifications
-  statdb = "",
+  -- The last mtime of the xrnx file
+  last_mtime = 0,
 }
-
----@alias StatEntry {mtime: integer, size: integer, file: string}
 
 ---@class Store
 ---@field preferences PreferencesDocument

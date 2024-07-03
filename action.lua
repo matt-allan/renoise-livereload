@@ -61,8 +61,6 @@ function action.open_project(store, path)
     project.folder.value = path
     project.xrnx_id.value = xrnx_id
     project.build_command.value = util.detect_build_command(path, xrnx_id..".xrnx")
-    project.file_extensions:insert(".lua")
-    project.file_extensions:insert(".xml")
 
     save_project(project)
   end
@@ -96,6 +94,8 @@ end
 ---@param value boolean
 function action.toggle_watch(store, value)
   store.preferences.watch.value = value
+
+  --TODO: enable / disable a watch callback here
 end
 
 ---@param store Store
@@ -128,30 +128,6 @@ function action.spawn_build(store)
 
   log("Starting build")
 
-  local stats, err = util.stat_dir(
-    store.project.folder.value,
-    util.collect_observable_list(store.project.file_extensions)
-  )
-
-  if not stats then
-    log(string.format("ERROR: %s", err))
-    return
-  end
-
-  local old_stats = util.stat_decode(store.project.statdb.value)
-  print(string.format("%d old stats", #old_stats))
-  print(string.format("%d new stats", #stats))
-  local changed_files = util.stat_diff(old_stats, stats)
-  -- rprint(changed_files)
-
-  if #changed_files == 0 then
-    log("No changes")
-    return
-  end
-  log(string.format("Detected %s changed files", #changed_files))
-  store.project.statdb.value = util.stat_encode(stats)
-  save_project(store.project)
-
   local folder = store.project.folder.value
   local xrnx_id = store.project.xrnx_id.value
   local build_cmd = store.project.build_command.value
@@ -171,6 +147,19 @@ function action.spawn_build(store)
     log("ERROR: No xrnx generated")
     action.sync_logs(store)
     return
+  end
+
+  local stat, stat_err = io.stat(xrnx_path)
+  if not stat then
+    log(string.format("ERROR: Stat error: %s", stat_err))
+  else
+    local last_mtime = store.project.last_mtime.value
+    store.project.last_mtime.value = stat.mtime
+    save_project(store.project)
+    if stat.mtime == last_mtime then
+      log("No changes")
+      return
+    end
   end
 
   log("Installing...")
