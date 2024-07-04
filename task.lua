@@ -4,7 +4,7 @@ local tool = renoise.tool()
 ---@param store Store
 local function setup_watcher(store)
   local should_watch = function ()
-    return store.preferences.watch.value and store.project ~= nil
+    return store.state.watch.value and store.state.folder ~= ""
   end
 
   local trigger_build = function ()
@@ -22,8 +22,8 @@ local function setup_watcher(store)
     end
   end
 
-  store.preferences.watch:add_notifier(update_bindings)
-  store.preferences.active_project:add_notifier(update_bindings)
+  store.state.watch:add_notifier(update_bindings)
+  store.state.folder:add_notifier(update_bindings)
   update_bindings()
 end
 

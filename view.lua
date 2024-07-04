@@ -13,22 +13,12 @@ local DEFAULT_CONTROL_HEIGHT = renoise.ViewBuilder.DEFAULT_CONTROL_HEIGHT
 ---@return renoise.Views.MultiLineTextField
 local function build_command_view(store)
   local view = vb:textfield {
-    text = "",
+    text = store.state.build_command.value,
+    width = "100%",
     notifier = function (value)
       action.set_build_command(store, value)
-    end,
-    width = "100%",
+    end
   }
-
-  local sync_build_command = function ()
-    view.text = store.project and store.project.build_command.value or ""
-  end
-
-  store.preferences.active_project:add_notifier(function ()
-    sync_build_command()
-  end)
-
-  sync_build_command()
 
   return view
 end
@@ -41,25 +31,12 @@ local function build_log_view(store)
     height = 80,
     font = "mono",
     style = "border",
-    text = "",
+    text = store.state.build_log.value,
   }
-
-  local sync_lines = function ()
-    if not store.project then return end
-    local lines = util.collect_observable_list(store.project.build_log)
-    view.text = table.concat(lines, "\n")
-    view:scroll_to_last_line()
-  end
-  store.preferences.active_project:add_notifier(function ()
-    if not store.project.build_log:has_notifier(sync_lines) then
-      store.project.build_log:add_notifier(sync_lines)
-    end
-    sync_lines()
+  store.state.build_log:add_notifier(function ()
+    view.text = store.state.build_log.value
   end)
-  if store.project then
-    store.project.build_log:add_notifier(sync_lines)
-  end
-  sync_lines()
+  view:scroll_to_last_line()
 
   return view
 end
@@ -68,13 +45,13 @@ end
 ---@return renoise.Views.Text
 local function active_project_view(store)
   local view = vb:text {
-    text = store.preferences.active_project.value,
+    text = store.state.folder.value,
     width = "100%",
     style = "strong",
     font = "mono",
   }
-  store.preferences.active_project:add_notifier(function ()
-    view.text = store.preferences.active_project.value
+  store.state.folder:add_notifier(function ()
+    view.text = store.state.folder.value
   end)
 
   return view
@@ -104,7 +81,7 @@ local function build_dialog_view(store)
         build_command_view(store),
         vb:row {
           vb:checkbox {
-            value = store.preferences.watch.value,
+            value = store.state.watch.value,
             notifier = function (value)
               action.set_watch(store, value)
             end
@@ -138,7 +115,7 @@ local function build_dialog_view(store)
           text = "Build",
           width = "100%",
           released = function ()
-            if store.project then
+            if store.state.folder.value ~= "" then
               action.spawn_build(store)
             end
           end,
@@ -198,7 +175,7 @@ local function build_menu(store)
   tool:add_menu_entry {
     name = "Main Menu:Tools:Live Reload",
     invoke = function()
-      if store.preferences.active_project.value == "" then
+      if store.state.folder.value == "" then
         local folder = app:prompt_for_path("Open project")
 
         if folder == "" then return end
@@ -223,20 +200,16 @@ end
 
 ---@param store Store
 local function view(store)
-  store.preferences.active_project:add_notifier(function ()
-    show_build_dialog(store)
-  end)
-
   store.error_message:add_notifier(function ()
     show_error(store)
   end)
 
   build_menu(store)
 
-  if store.preferences.active_project.value ~= "" then
-    action.open_project(store, store.preferences.active_project.value)
+  if store.state.folder.value ~= "" then
+    action.open_project(store, store.state.folder.value)
 
-    if store.preferences.watch.value then
+    if store.state.watch.value then
       show_build_dialog(store)
     end
   end
