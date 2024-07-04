@@ -1,3 +1,4 @@
+local build = require "build"
 local tool = renoise.tool()
 
 ---@param store Store
@@ -8,7 +9,7 @@ local function setup_watcher(store)
 
   local trigger_build = function ()
     if should_watch() then
-      store:spawn_build()
+      build.spawn(store)
     end
   end
 

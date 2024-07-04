@@ -15,29 +15,6 @@ function util.path_join(p, ...)
   return p
 end
 
-function util.ensure_dir(path)
-  if not io.exists(path) then
-    local ok, err = os.mkdir(path)
-    if not ok then
-      error(string.format("Error creating directory at %s: %s", path, err))
-    end
-  end
-end
-
-function util.detect_build_command(path, outfile)
-  if io.exists(util.path_join(path, "Makefile")) then
-    return "make"
-  end
-
-  local cmd = string.format("zip -vr %s *", outfile)
-
-  if io.exists(util.path_join(path, "exclude.list")) then
-    cmd = cmd .. "-x@../exclude.list"
-  end
-
-  return cmd
-end
-
 function util.str_trim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
@@ -47,15 +24,35 @@ function util.str_limit(s, len)
   return string.sub(s, 1, len) .. "..."
 end
 
----Collect the values from an observable list into a table.
----@param list renoise.Document.ObservableList
----@return table
-function util.collect_observable_list(list)
-  local t = {}
-  for i=1,#list do
-    table.insert(t, list[i].value)
+---@param folder string
+---@param cmd string
+---@return string[]?
+---@return number
+---@return string?
+function util.shell_exec(folder, cmd)
+  assert(folder and #folder > 1)
+  assert(cmd and #cmd > 1)
+
+  local sh_cmd = string.format(
+    "cd %q && %s 2>&1; echo %s",
+    folder,
+    cmd,
+    os.platform() == "WINDOWS" and "$LastExitCode" or "$?"
+  )
+
+  local fh, err = io.popen(sh_cmd)
+
+  if not fh then
+    return nil, -1, err
   end
-  return t
+
+  local output = {}
+  for line in fh:lines() do
+    table.insert(output, line)
+  end
+  local exit_code = table.remove(output)
+
+  return output, tonumber(exit_code) or 0, ""
 end
 
 return util
