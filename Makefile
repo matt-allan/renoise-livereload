@@ -1,4 +1,4 @@
-XRNX := com.matta.devtools.xrnx
+XRNX := com.matta.livereload.xrnx
 SOURCES := $(wildcard *.lua) 
 
 $(XRNX): $(SOURCES) LICENSE.md manifest.xml
