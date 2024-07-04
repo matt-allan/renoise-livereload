@@ -1,4 +1,5 @@
 local util = require "util"
+local action = require "action"
 local vb = renoise.ViewBuilder()
 local tool = renoise.tool()
 local app = renoise.app()
@@ -9,13 +10,12 @@ local DEFAULT_CONTROL_SPACING = renoise.ViewBuilder.DEFAULT_CONTROL_SPACING
 local DEFAULT_CONTROL_HEIGHT = renoise.ViewBuilder.DEFAULT_CONTROL_HEIGHT
 
 ---@param store Store
----@param bus Bus 
 ---@return renoise.Views.MultiLineTextField
-local function build_command_view(store, bus)
+local function build_command_view(store)
   local view = vb:textfield {
     text = "",
     notifier = function (value)
-      bus:publish("set_build_command", value)
+      action.set_build_command(store, value)
     end,
     width = "100%",
   }
@@ -81,9 +81,8 @@ local function active_project_view(store)
 end
 
 ---@param store Store
----@param bus Bus
 ---@return renoise.Views.Rack
-local function build_dialog_view(store, bus)
+local function build_dialog_view(store)
   local build_config_group = vb:column {
     margin = DEFAULT_MARGIN,
     style = "group",
@@ -102,12 +101,12 @@ local function build_dialog_view(store, bus)
           text = "Build command:",
           font = "mono",
         },
-        build_command_view(store, bus),
+        build_command_view(store),
         vb:row {
           vb:checkbox {
             value = store.preferences.watch.value,
             notifier = function (value)
-              bus:publish("set_watch", value)
+              action.set_watch(store, value)
             end
           },
           vb:text { text = "Watch for changes" },
@@ -128,7 +127,7 @@ local function build_dialog_view(store, bus)
 
             if folder == "" then return end
 
-            bus:publish("open_project", folder)
+            action.open_project(store, folder)
           end
         },
         vb:space {
@@ -140,7 +139,7 @@ local function build_dialog_view(store, bus)
           width = "100%",
           released = function ()
             if store.project then
-              bus:publish("spawn_build")
+              action.spawn_build(store)
             end
           end,
         },
@@ -161,7 +160,7 @@ local function build_dialog_view(store, bus)
       text = "Clear",
       width = "10%",
       released = function ()
-        bus:publish("clear_build_log")
+        action.clear_build_log(store)
       end
     },
   }
@@ -180,14 +179,13 @@ end
 local build_dialog = nil
 
 ---@param store Store
----@param bus Bus 
-local function show_build_dialog(store, bus)
+local function show_build_dialog(store)
   if build_dialog and build_dialog.visible then
     build_dialog:show()
     return
   end
 
-  local dialog_view = build_dialog_view(store, bus)
+  local dialog_view = build_dialog_view(store)
 
   build_dialog = app:show_custom_dialog(
     "Live Reload",
@@ -196,8 +194,7 @@ local function show_build_dialog(store, bus)
 end
 
 ---@param store Store
----@param bus Bus
-local function build_menu(store, bus)
+local function build_menu(store)
   tool:add_menu_entry {
     name = "Main Menu:Tools:Live Reload",
     invoke = function()
@@ -206,10 +203,10 @@ local function build_menu(store, bus)
 
         if folder == "" then return end
 
-        bus:publish("open_project", folder)
+        action.open_project(store, folder)
       end
 
-      show_build_dialog(store, bus)
+      show_build_dialog(store)
     end,
   }
 end
@@ -225,21 +222,23 @@ local function show_error(store)
 end
 
 ---@param store Store
----@param bus Bus
-local function view(store, bus)
+local function view(store)
   store.preferences.active_project:add_notifier(function ()
-    show_build_dialog(store, bus)
+    show_build_dialog(store)
   end)
 
   store.error_message:add_notifier(function ()
     show_error(store)
   end)
 
-  build_menu(store, bus)
+  build_menu(store)
 
-  if store.preferences.active_project.value ~= "" and
-    store.preferences.watch.value then
-    show_build_dialog(store, bus)
+  if store.preferences.active_project.value ~= "" then
+    action.open_project(store, store.preferences.active_project.value)
+
+    if store.preferences.watch.value then
+      show_build_dialog(store)
+    end
   end
 end
 

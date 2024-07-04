@@ -15,13 +15,6 @@ local function save_project(project)
 end
 
 ---@param store Store
-function action.boot(store)
-  if store.preferences.active_project.value then
-    action.open_project(store, store.preferences.active_project.value)
-  end
-end
-
----@param store Store
 ---@param path string
 function action.open_project(store, path)
   local manifest_path = util.path_join(path, "manifest.xml")

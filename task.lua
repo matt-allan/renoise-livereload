@@ -1,15 +1,15 @@
+local action = require "action"
 local tool = renoise.tool()
 
 ---@param store Store
----@param bus Bus
-local function setup_watcher(store, bus)
+local function setup_watcher(store)
   local should_watch = function ()
     return store.preferences.watch.value and store.project ~= nil
   end
 
   local trigger_build = function ()
     if should_watch() then
-      bus:publish("spawn_build")
+      action.spawn_build(store)
     end
   end
 
@@ -28,9 +28,8 @@ local function setup_watcher(store, bus)
 end
 
 ---@param store Store
----@param bus Bus
-local function task(store, bus)
-  setup_watcher(store, bus)
+local function task(store)
+  setup_watcher(store)
 end
 
 return task
