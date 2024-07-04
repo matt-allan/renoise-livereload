@@ -3,11 +3,9 @@ local tool = renoise.tool()
 ---@class PreferencesDocument: renoise.Document.DocumentNode
 ---@field watch renoise.Document.ObservableBoolean
 ---@field active_project renoise.Document.ObservableString
----@field recent_projects renoise.Document.ObservableStringList
 renoise.tool().preferences = renoise.Document.create("LiveReloadPreferences") {
   watch = true,
   active_project = "",
-  recent_projects = renoise.Document.ObservableStringList(),
 }
 
 --- This isn't a data model we own; it's used to load files off the disk.

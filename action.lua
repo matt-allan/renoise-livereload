@@ -71,20 +71,12 @@ function action.open_project(store, path)
 
   store.project = project
   store.preferences.active_project.value = path
-  if not store.preferences.recent_projects:find(path) then
-    store.preferences.recent_projects:insert(path)
-  end
-end
-
-function action.clear_recent_projects(store)
-  while #store.preferences.recent_projects > 0 do
-    store.preferences.recent_projects:remove()
-  end
 end
 
 ---@param store Store
 ---@param value string
 function action.set_build_command(store, value)
+  if not store.project then return end
   store.project.build_command.value = util.str_trim(value)
 
   save_project(store.project)
@@ -98,6 +90,8 @@ end
 
 ---@param store Store
 function action.clear_build_log(store)
+  if not store.project then return end
+
   while store.project.build_log:size() > 0 do
     store.project.build_log:remove(1)
   end

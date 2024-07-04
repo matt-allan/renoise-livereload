@@ -195,60 +195,17 @@ local function show_build_dialog(store, bus)
   )
 end
 
----@param entry ToolMenuEntry
-local function add_menu_entry(entry)
-  if tool:has_menu_entry(entry.name) then return end
-
-  tool:add_menu_entry(entry)
-end
-
-local recent_entries = {}
-
 ---@param store Store
 ---@param bus Bus
 local function build_menu(store, bus)
-  add_menu_entry {
-    name = "Main Menu:Tools:LiveReload:Open project...",
+  tool:add_menu_entry {
+    name = "Main Menu:Tools:Live Reload",
     invoke = function()
-      local folder = app:prompt_for_path("Open project")
-
-      if folder == "" then return end
-
-      bus:publish("open_project", folder)
-    end,
-  }
-
-  for i,entry_name in pairs(recent_entries) do
-    if store.preferences.recent_projects[i] == nil then
-      if tool:has_menu_entry(entry_name) then tool:remove_menu_entry(entry_name) end
-    end
-    recent_entries[i] = nil
-  end
-  for i=1,#store.preferences.recent_projects do
-    local name = store.preferences.recent_projects[i].value
-    local entry_name = "Main Menu:Tools:LiveReload:Open recent project...:" .. name
-    add_menu_entry {
-      name = entry_name,
-      invoke = function()
-        bus:publish("open_project", name)
-      end,
-    }
-    recent_entries[i] = entry_name
-  end
-
-  add_menu_entry {
-    name = "Main Menu:Tools:LiveReload:Open recent project...:Clear menu",
-    invoke = function()
-      bus:publish("clear_recent_projects")
-    end,
-  }
-
-  add_menu_entry {
-    name = "Main Menu:Tools:LiveReload:Settings...",
-    invoke = function()
-      if not store.preferences.active_project then
+      if store.preferences.active_project.value == "" then
         local folder = app:prompt_for_path("Open project")
+
         if folder == "" then return end
+
         bus:publish("open_project", folder)
       end
 
@@ -257,27 +214,31 @@ local function build_menu(store, bus)
   }
 end
 
+local function show_error(store)
+    local message = store.error_message.value
+
+    if message == "" then return end
+
+    app:show_error(message)
+
+    store.error_message.value = ""
+end
+
 ---@param store Store
 ---@param bus Bus
 local function view(store, bus)
-  store.preferences.recent_projects:add_notifier(function ()
-    build_menu(store, bus)
-  end)
-
   store.preferences.active_project:add_notifier(function ()
     show_build_dialog(store, bus)
   end)
 
   store.error_message:add_notifier(function ()
-    local message = store.error_message.value
-    if message == "" then return end
-    app:show_error(message)
-    store.error_message.value = ""
+    show_error(store)
   end)
 
   build_menu(store, bus)
 
-  if store.preferences.active_project.value ~= "" then
+  if store.preferences.active_project.value ~= "" and
+    store.preferences.watch.value then
     show_build_dialog(store, bus)
   end
 end

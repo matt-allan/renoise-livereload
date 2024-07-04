@@ -4,7 +4,7 @@
   <Id>com.matta.livereload</Id>
   <Version>0.1</Version>
   <Author>Matt Allan [oss@mattallan.me]</Author>
-  <Name>Devtools</Name>
+  <Name>LiveReload</Name>
   <Category>Development</Category>
   <Description>Live reload for xrnx tools</Description>
   <Homepage>http://tools.renoise.com/tools/livereload</Homepage>
