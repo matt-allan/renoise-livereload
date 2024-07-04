@@ -71,7 +71,7 @@ end
 ---@param store Store
 function build.spawn(store)
   local log = function (msg)
-    local line = string.format("[%s] %s", os.date("%c"), msg)
+    local line = string.format("[%s] %s", os.date("%X"), msg)
     store:log(line)
   end
 
