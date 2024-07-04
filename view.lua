@@ -11,7 +11,7 @@ local DEFAULT_CONTROL_HEIGHT = renoise.ViewBuilder.DEFAULT_CONTROL_HEIGHT
 ---@return renoise.Views.MultiLineTextField
 local function build_command_view(store)
   local view = vb:textfield {
-    text = store.state.build_command.value,
+    text = store.build_command,
     width = "100%",
     notifier = function (value)
       store:set_build_command(value)
@@ -29,10 +29,11 @@ local function build_log_view(store)
     height = 80,
     font = "mono",
     style = "border",
-    text = store.state.build_log.value,
+    text = store.build_log,
   }
-  store.state.build_log:add_notifier(function ()
-    view.text = store.state.build_log.value
+  store.preferences.build_log:add_notifier(function ()
+    view.text = store.build_log
+    view:scroll_to_last_line()
   end)
   view:scroll_to_last_line()
 
@@ -43,13 +44,13 @@ end
 ---@return renoise.Views.Text
 local function active_project_view(store)
   local view = vb:text {
-    text = store.state.folder.value,
+    text = store.folder,
     width = "100%",
     style = "strong",
     font = "mono",
   }
-  store.state.folder:add_notifier(function ()
-    view.text = store.state.folder.value
+  store.preferences.folder:add_notifier(function ()
+    view.text = store.folder
   end)
 
   return view
@@ -79,7 +80,7 @@ local function build_dialog_view(store)
         build_command_view(store),
         vb:row {
           vb:checkbox {
-            value = store.state.watch.value,
+            value = store.watch,
             notifier = function (value)
               store:set_watch(value)
             end
@@ -113,7 +114,7 @@ local function build_dialog_view(store)
           text = "Build",
           width = "100%",
           released = function ()
-            if store.state.folder.value ~= "" then
+            if store.folder ~= "" then
               store:spawn_build()
             end
           end,
@@ -173,7 +174,7 @@ local function build_menu(store)
   tool:add_menu_entry {
     name = "Main Menu:Tools:Live Reload",
     invoke = function()
-      if store.state.folder.value == "" then
+      if store.folder== "" then
         local folder = app:prompt_for_path("Open project")
 
         if folder == "" then return end
@@ -187,27 +188,27 @@ local function build_menu(store)
 end
 
 local function show_error(store)
-    local message = store.error_message.value
+    local message = store.error_message
 
     if message == "" then return end
 
     app:show_error(message)
 
-    store.error_message.value = ""
+    store.error_message = ""
 end
 
 ---@param store Store
 local function view(store)
-  store.error_message:add_notifier(function ()
+  store.mem.error_message:add_notifier(function ()
     show_error(store)
   end)
 
   build_menu(store)
 
-  if store.state.folder.value ~= "" then
+  if store.folder ~= "" then
     store:open_project()
 
-    if store.state.watch.value then
+    if store.watch then
       show_build_dialog(store)
     end
   end

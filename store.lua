@@ -1,24 +1,56 @@
 local util = require "util"
 
 ---@class Store
----@field state PreferencesDocument
----@field error_message renoise.Document.ObservableString
-local store = {
-  state = renoise.tool().preferences,
-  -- todo track in mem log lines
-  -- log_lines = renoise.Document.ObservableStringList(),
-  error_message = renoise.Document.ObservableString(),
-}
+---@field preferences PreferencesDocument
+---@field watch boolean
+---@field folder string
+---@field xrnx_id string
+---@field build_command string
+---@field build_log string
+---@field last_mtime integer
+---@field mem {error_message: renoise.Document.ObservableString}
+---@field error_message string
+local Store = {}
+Store.__index = function (t, k)
+  if Store[k] ~= nil then return Store[k] end
+
+    local target = t.preferences[k] or t.mem[k]
+
+    if not target then return nil end
+
+    return target.value
+end
+Store.__newindex = function (t, k, v)
+  local target = t.preferences[k] or t.mem[k]
+
+  if not target then return end
+
+  target.value = v
+end
+
+function Store:new()
+  return setmetatable({
+    -- persistent state
+    -- TODO: make private once can subscribe without notifiers
+    preferences = renoise.tool().preferences,
+    -- ephemeral state
+    mem = {
+      -- todo track in mem log lines
+      -- log_lines = renoise.Document.ObservableStringList(),
+      error_message = renoise.Document.ObservableString(),
+    },
+  }, Store)
+end
 
 ---@param path string?
-function store:open_project(path)
-  path = path or store.state.folder.value
+function Store:open_project(path)
+  path = path or self.folder
   if not path or path == "" then return end
 
   local manifest_path = util.path_join(path, "manifest.xml")
 
   if not io.exists(manifest_path) then
-    self.error_message.value = string.format("Manifest not found at path %s", manifest_path)
+    self.error_message = string.format("Manifest not found at path %s", manifest_path)
     return
   end
 
@@ -27,59 +59,59 @@ function store:open_project(path)
   local ok, err = manifest_doc:load_from(manifest_path)
 
   if not ok then
-    self.error_message.value = string.format("Error loading manifest: %s", err)
+    self.error_message = string.format("Error loading manifest: %s", err)
     return
   end
 
   local xrnx_id = manifest_doc["Id"].value
 
   if not xrnx_id then
-    self.error_message.value = "Manifest field 'Id' not found"
+    self.error_message = "Manifest field 'Id' not found"
     return
   end
 
-  if self.state.folder.value ~= path then
-    self.state.folder.value = path
-    self.state.xrnx_id.value = xrnx_id
-    self.state.build_command.value = util.detect_build_command(path, xrnx_id..".xrnx")
-    self.state.build_log.value = ""
-    self.state.last_mtime.value = 0
+  if self.folder ~= path then
+    self.folder = path
+    self.xrnx_id = xrnx_id
+    self.build_command = util.detect_build_command(path, xrnx_id..".xrnx")
+    self.build_log = ""
+    self.last_mtime = 0
   end
 end
 
 ---@param value string
-function store:set_build_command(value)
-  self.state.build_command.value = util.str_trim(value)
+function Store:set_build_command(value)
+  self.build_command = util.str_trim(value)
 end
 
 ---@param value boolean
-function store:set_watch(value)
-  self.state.watch.value = value
+function Store:set_watch(value)
+  self.watch = value
 end
 
-function store:clear_build_log()
-  self.state.build_log.value = ""
+function Store:clear_build_log()
+  self.build_log = ""
 end
 
 ---@param msg string
-function store:log(msg)
+function Store:log(msg)
   local line = string.format("[%s] %s", os.date("%c"), msg)
 
-  self.state.build_log.value = self.state.build_log.value .. "\n" .. line
+  self.build_log = self.build_log .. "\n" .. line
 end
 
-function store:sync_logs()
+function Store:sync_logs()
   -- todo
 end
 
-function store:spawn_build()
+function Store:spawn_build()
   local log = function (msg) self:log(msg) end
 
   log("Starting build")
 
-  local folder = self.state.folder.value
-  local xrnx_id = self.state.xrnx_id.value
-  local build_cmd = self.state.build_command.value
+  local folder = self.folder
+  local xrnx_id = self.xrnx_id
+  local build_cmd = self.build_command
 
   log(string.format("Executing build command `%s`", build_cmd))
   local command = string.format(
@@ -102,8 +134,8 @@ function store:spawn_build()
   if not stat then
     log(string.format("ERROR: Stat error: %s", stat_err))
   else
-    local last_mtime = self.state.last_mtime.value
-    self.state.last_mtime.value = stat.mtime
+    local last_mtime = self.last_mtime
+    self.last_mtime = stat.mtime
     if stat.mtime == last_mtime then
       log("No changes")
       return
@@ -115,4 +147,4 @@ function store:spawn_build()
   renoise.app():install_tool(xrnx_path)
 end
 
-return store
+return Store:new()
