@@ -12,18 +12,14 @@ local function setup_watcher(store)
     end
   end
 
-  local update_bindings = function ()
+  store:watch_effect(function ()
     local has_notifier = tool.app_became_active_observable:has_notifier(trigger_build)
     if should_watch() then
       if not has_notifier then tool.app_became_active_observable:add_notifier(trigger_build) end
     else
       if has_notifier then tool.app_became_active_observable:remove_notifier(trigger_build) end
     end
-  end
-
-  store.preferences.watch:add_notifier(update_bindings)
-  store.preferences.folder:add_notifier(update_bindings)
-  update_bindings()
+  end)
 end
 
 ---@param store Store
