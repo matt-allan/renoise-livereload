@@ -11,23 +11,37 @@ local util = require "util"
 ---@field mem {error_message: renoise.Document.ObservableString}
 ---@field error_message string
 local Store = {}
+
+local active_effect = nil
+
 Store.__index = function (t, k)
   if Store[k] ~= nil then return Store[k] end
 
-    local target = t.preferences[k] or t.mem[k]
+  local field = t.preferences[k] ~= nil and "preferences" or "mem"
 
-    if not target then return nil end
+  local target = rawget(t, field)[k]
 
-    return target.value
+  if not target then return nil end
+
+  if active_effect then
+    if not target:has_notifier(active_effect) then
+      target:add_notifier(active_effect)
+    end
+  end
+
+  return target.value
 end
+
 Store.__newindex = function (t, k, v)
-  local target = t.preferences[k] or t.mem[k]
+  local field = t.preferences[k] ~= nil and "preferences" or "mem"
+  local target = rawget(t, field)[k]
 
   if not target then return end
 
   target.value = v
 end
 
+---@return Store
 function Store:new()
   return setmetatable({
     -- persistent state
@@ -40,6 +54,12 @@ function Store:new()
       error_message = renoise.Document.ObservableString(),
     },
   }, Store)
+end
+
+function Store:watch_effect(cb)
+  active_effect = cb
+  cb()
+  active_effect = nil
 end
 
 ---@param path string?
@@ -147,4 +167,4 @@ function Store:spawn_build()
   renoise.app():install_tool(xrnx_path)
 end
 
-return Store:new()
+return Store

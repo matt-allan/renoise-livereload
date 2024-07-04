@@ -29,14 +29,12 @@ local function build_log_view(store)
     height = 80,
     font = "mono",
     style = "border",
-    text = store.build_log,
+    text = "",
   }
-  store.preferences.build_log:add_notifier(function ()
+  store:watch_effect(function ()
     view.text = store.build_log
     view:scroll_to_last_line()
   end)
-  view:scroll_to_last_line()
-
   return view
 end
 
@@ -44,15 +42,14 @@ end
 ---@return renoise.Views.Text
 local function active_project_view(store)
   local view = vb:text {
-    text = store.folder,
     width = "100%",
     style = "strong",
     font = "mono",
+    text = "",
   }
-  store.preferences.folder:add_notifier(function ()
+  store:watch_effect(function ()
     view.text = store.folder
   end)
-
   return view
 end
 
@@ -199,7 +196,7 @@ end
 
 ---@param store Store
 local function view(store)
-  store.mem.error_message:add_notifier(function ()
+  store:watch_effect(function ()
     show_error(store)
   end)
 
