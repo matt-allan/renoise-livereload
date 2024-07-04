@@ -1,5 +1,3 @@
-local util = require "util"
-local action = require "action"
 local vb = renoise.ViewBuilder()
 local tool = renoise.tool()
 local app = renoise.app()
@@ -16,7 +14,7 @@ local function build_command_view(store)
     text = store.state.build_command.value,
     width = "100%",
     notifier = function (value)
-      action.set_build_command(store, value)
+      store:set_build_command(value)
     end
   }
 
@@ -83,7 +81,7 @@ local function build_dialog_view(store)
           vb:checkbox {
             value = store.state.watch.value,
             notifier = function (value)
-              action.set_watch(store, value)
+              store:set_watch(value)
             end
           },
           vb:text { text = "Watch for changes" },
@@ -104,7 +102,7 @@ local function build_dialog_view(store)
 
             if folder == "" then return end
 
-            action.open_project(store, folder)
+            store:open_project(folder)
           end
         },
         vb:space {
@@ -116,7 +114,7 @@ local function build_dialog_view(store)
           width = "100%",
           released = function ()
             if store.state.folder.value ~= "" then
-              action.spawn_build(store)
+              store:spawn_build()
             end
           end,
         },
@@ -137,7 +135,7 @@ local function build_dialog_view(store)
       text = "Clear",
       width = "10%",
       released = function ()
-        action.clear_build_log(store)
+        store:clear_build_log()
       end
     },
   }
@@ -180,7 +178,7 @@ local function build_menu(store)
 
         if folder == "" then return end
 
-        action.open_project(store, folder)
+        store:open_project(folder)
       end
 
       show_build_dialog(store)
@@ -207,7 +205,7 @@ local function view(store)
   build_menu(store)
 
   if store.state.folder.value ~= "" then
-    action.open_project(store, store.state.folder.value)
+    store:open_project()
 
     if store.state.watch.value then
       show_build_dialog(store)
