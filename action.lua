@@ -126,7 +126,7 @@ function action.spawn_build(store)
 
   log(string.format("Executing build command `%s`", build_cmd))
   local command = string.format(
-    "cd %s && %s",
+    "cd %q && %s",
     folder,
     build_cmd
   )
