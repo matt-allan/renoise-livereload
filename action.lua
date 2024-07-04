@@ -27,7 +27,8 @@ function action.open_project(store, path)
   local manifest_path = util.path_join(path, "manifest.xml")
 
   if not io.exists(manifest_path) then
-    error(string.format("Manifest not found at path %s", manifest_path))
+    store.error_message.value = string.format("Manifest not found at path %s", manifest_path)
+    return
   end
 
   local manifest_doc = renoise.Document.instantiate("RenoiseScriptingTool")
@@ -35,13 +36,15 @@ function action.open_project(store, path)
   local ok, err = manifest_doc:load_from(manifest_path)
 
   if not ok then
-    error(string.format("Error loading manifest: %s", err))
+    store.error_message.value = string.format("Error loading manifest: %s", err)
+    return
   end
 
   local xrnx_id = manifest_doc["Id"].value
 
   if not xrnx_id then
-    error("Manifest field 'Id' not found")
+    store.error_message.value = "Manifest field 'Id' not found"
+    return
   end
 
   ---@type ProjectDocument
@@ -55,7 +58,8 @@ function action.open_project(store, path)
     ok, err = project:load_from(xml_file_name)
 
     if not ok then
-      error(string.format("Error loading project XML: %s", err))
+      store.error_message.value = string.format("Error loading project XML: %s", err)
+      return
     end
   else
     project.folder.value = path
@@ -69,10 +73,6 @@ function action.open_project(store, path)
   store.preferences.active_project.value = path
   if not store.preferences.recent_projects:find(path) then
     store.preferences.recent_projects:insert(path)
-  end
-
-  if not store.preferences.build_dialog_opened.value then
-    store.preferences.build_dialog_opened.value = true
   end
 end
 
@@ -92,10 +92,8 @@ end
 
 ---@param store Store
 ---@param value boolean
-function action.toggle_watch(store, value)
+function action.set_watch(store, value)
   store.preferences.watch.value = value
-
-  --TODO: enable / disable a watch callback here
 end
 
 ---@param store Store

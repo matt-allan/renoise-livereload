@@ -1,9 +1,10 @@
+local action = require "action"
 local bus = require "bus"
 local store = require "store"
+local task = require "task"
 local view = require "view"
-local action = require "action"
 
-local DEV = true
+local IS_DEV = false
 
 local function bind_handlers()
   for key,fn in pairs(action) do
@@ -14,9 +15,10 @@ local function bind_handlers()
 end
 
 local function main()
-  if DEV then bus:subscribe("*", function (msg) print("MSG: "..msg) end) end
+  if IS_DEV then bus:subscribe("*", function (msg) print("MSG: "..msg) end) end
   bind_handlers()
   bus:publish("boot")
+  task(store, bus)
   view(store, bus)
 end
 

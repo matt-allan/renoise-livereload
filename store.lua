@@ -4,12 +4,10 @@ local tool = renoise.tool()
 ---@field watch renoise.Document.ObservableBoolean
 ---@field active_project renoise.Document.ObservableString
 ---@field recent_projects renoise.Document.ObservableStringList
----@field build_dialog_opened renoise.Document.ObservableBoolean
 renoise.tool().preferences = renoise.Document.create("LiveReloadPreferences") {
   watch = true,
   active_project = "",
   recent_projects = renoise.Document.ObservableStringList(),
-  build_dialog_opened = false,
 }
 
 --- This isn't a data model we own; it's used to load files off the disk.
@@ -50,9 +48,11 @@ renoise.Document.create("LiveReloadProject") {
 ---@class Store
 ---@field preferences PreferencesDocument
 ---@field project ProjectDocument?
+---@field error_message renoise.Document.ObservableString
 local store = {
   preferences = renoise.tool().preferences,
   project = nil,
+  error_message = renoise.Document.ObservableString(),
 }
 
 return store

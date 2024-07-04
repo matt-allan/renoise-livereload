@@ -37,7 +37,6 @@ end
 ---@return renoise.Views.MultiLineTextField
 local function build_log_view(store)
   local view = vb:multiline_text {
-    id = "build_log_text",
     width = "100%",
     height = 80,
     font = "mono",
@@ -108,7 +107,7 @@ local function build_dialog_view(store, bus)
           vb:checkbox {
             value = store.preferences.watch.value,
             notifier = function (value)
-              bus:publish("toggle_watch", value)
+              bus:publish("set_watch", value)
             end
           },
           vb:text { text = "Watch for changes" },
@@ -177,12 +176,33 @@ local function build_dialog_view(store, bus)
   }
 end
 
+---@type renoise.Dialog?
+local build_dialog = nil
+
+---@param store Store
+---@param bus Bus 
+local function show_build_dialog(store, bus)
+  if build_dialog and build_dialog.visible then
+    build_dialog:show()
+    return
+  end
+
+  local dialog_view = build_dialog_view(store, bus)
+
+  build_dialog = app:show_custom_dialog(
+    "Live Reload",
+    dialog_view
+  )
+end
+
 ---@param entry ToolMenuEntry
 local function add_menu_entry(entry)
   if tool:has_menu_entry(entry.name) then return end
 
   tool:add_menu_entry(entry)
 end
+
+local recent_entries = {}
 
 ---@param store Store
 ---@param bus Bus
@@ -198,15 +218,22 @@ local function build_menu(store, bus)
     end,
   }
 
+  for i,entry_name in pairs(recent_entries) do
+    if store.preferences.recent_projects[i] == nil then
+      if tool:has_menu_entry(entry_name) then tool:remove_menu_entry(entry_name) end
+    end
+    recent_entries[i] = nil
+  end
   for i=1,#store.preferences.recent_projects do
     local name = store.preferences.recent_projects[i].value
-
+    local entry_name = "Main Menu:Tools:LiveReload:Open recent project...:" .. name
     add_menu_entry {
-      name = "Main Menu:Tools:LiveReload:Open recent project...:" .. name,
+      name = entry_name,
       invoke = function()
         bus:publish("open_project", name)
       end,
     }
+    recent_entries[i] = entry_name
   end
 
   add_menu_entry {
@@ -215,33 +242,19 @@ local function build_menu(store, bus)
       bus:publish("clear_recent_projects")
     end,
   }
-end
 
----@type renoise.Dialog?
-local build_dialog = nil
+  add_menu_entry {
+    name = "Main Menu:Tools:LiveReload:Settings...",
+    invoke = function()
+      if not store.preferences.active_project then
+        local folder = app:prompt_for_path("Open project")
+        if folder == "" then return end
+        bus:publish("open_project", folder)
+      end
 
----@param store Store
----@param bus Bus 
-local function toggle_build_dialog(store, bus)
-  if not store.preferences.active_project.value then
-    if build_dialog then
-      build_dialog:close()
-      build_dialog = nil
-    end
-    return
-  end
-
-  if build_dialog and build_dialog.visible then
-    build_dialog:show()
-    return
-  end
-
-  local dialog_view = build_dialog_view(store, bus)
-
-  build_dialog = app:show_custom_dialog(
-    "Live Reload",
-    dialog_view
-  )
+      show_build_dialog(store, bus)
+    end,
+  }
 end
 
 ---@param store Store
@@ -251,12 +264,19 @@ local function view(store, bus)
     build_menu(store, bus)
   end)
 
-  store.preferences.build_dialog_opened:add_notifier(function ()
-    toggle_build_dialog(store, bus)
+  store.preferences.active_project:add_notifier(function ()
+    show_build_dialog(store, bus)
+  end)
+
+  store.error_message:add_notifier(function ()
+    local message = store.error_message.value
+    if message == "" then return end
+    app:show_error(message)
+    store.error_message.value = ""
   end)
 
   build_menu(store, bus)
-  toggle_build_dialog(store, bus)
+  show_build_dialog(store, bus)
 end
 
 return view
