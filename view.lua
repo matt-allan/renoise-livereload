@@ -276,7 +276,10 @@ local function view(store, bus)
   end)
 
   build_menu(store, bus)
-  show_build_dialog(store, bus)
+
+  if store.preferences.active_project.value ~= "" then
+    show_build_dialog(store, bus)
+  end
 end
 
 return view
